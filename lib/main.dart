@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'models/article_result.dart';
 import 'services/api_service.dart';
 import 'widgets/article_card.dart';
+import 'widgets/sentiment_chart.dart';
 
 void main() {
   runApp(const MyApp());
@@ -238,6 +239,7 @@ class _HomePageState extends State<HomePage> {
                 ArticleCard(article: _articles[index]),
           ),
         ),
+        if (_isAnalyzed) SentimentChart(articles: _articles),
       ],
     );
   }
