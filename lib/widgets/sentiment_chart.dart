@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../models/article_result.dart';
+import '../theme.dart';
 
 class SentimentChart extends StatelessWidget {
   final List<ArticleResult> articles;
@@ -27,84 +28,65 @@ class SentimentChart extends StatelessWidget {
     final avgConfidence =
         scoredCount > 0 ? (totalScore / scoredCount * 100).round() : 0;
 
-    // Dominant sentiment
-    final dominant = counts.entries
-        .reduce((a, b) => a.value >= b.value ? a : b)
-        .key;
+    final dominant =
+        counts.entries.reduce((a, b) => a.value >= b.value ? a : b).key;
     final dominantColor = _colorFor(dominant);
 
     final sections = [
       if (counts['positive']! > 0)
         PieChartSectionData(
           value: counts['positive']!.toDouble(),
-          color: Colors.green.shade400,
-          title: counts['positive']! > 0
-              ? '${(counts['positive']! / total * 100).round()}%'
-              : '',
-          radius: 52,
+          color: AppColors.positive,
+          title: '${(counts['positive']! / total * 100).round()}%',
+          radius: 48,
           titleStyle: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 12,
-          ),
+              color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11),
         ),
       if (counts['neutral']! > 0)
         PieChartSectionData(
           value: counts['neutral']!.toDouble(),
-          color: Colors.amber.shade400,
+          color: AppColors.neutral,
           title: '${(counts['neutral']! / total * 100).round()}%',
-          radius: 52,
+          radius: 48,
           titleStyle: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 12,
-          ),
+              color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11),
         ),
       if (counts['negative']! > 0)
         PieChartSectionData(
           value: counts['negative']!.toDouble(),
-          color: Colors.red.shade400,
+          color: AppColors.negative,
           title: '${(counts['negative']! / total * 100).round()}%',
-          radius: 52,
+          radius: 48,
           titleStyle: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 12,
-          ),
+              color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11),
         ),
     ];
 
     return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: Colors.grey.shade200, width: 1.5)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 10,
-            offset: const Offset(0, -3),
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       height: 180,
+      margin: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      decoration: BoxDecoration(
+        color: AppColors.cardBg,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.cardBorder),
+      ),
       child: Row(
         children: [
           // Donut chart
           SizedBox(
-            width: 148,
+            width: 140,
             child: Stack(
               alignment: Alignment.center,
               children: [
                 PieChart(
                   PieChartData(
                     sections: sections,
-                    centerSpaceRadius: 38,
+                    centerSpaceRadius: 36,
                     sectionsSpace: 2,
                     startDegreeOffset: -90,
                   ),
                 ),
-                // Center label
                 Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -116,65 +98,66 @@ class SentimentChart extends StatelessWidget {
                         color: dominantColor,
                       ),
                     ),
-                    Text(
-                      'articles',
-                      style: TextStyle(fontSize: 9, color: Colors.grey[500]),
+                    const Text(
+                      'results',
+                      style: TextStyle(
+                          fontSize: 9, color: AppColors.textSecondary),
                     ),
                   ],
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 28),
-          // Legend + stats
+          const SizedBox(width: 24),
+          // Legend
           Expanded(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                const Text(
                   'Sentiment Overview',
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 0.2,
-                      ),
+                  style: TextStyle(
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                    letterSpacing: 0.2,
+                  ),
                 ),
                 const SizedBox(height: 10),
                 _LegendRow(
-                  color: Colors.green.shade400,
-                  label: 'Positive',
-                  count: counts['positive']!,
-                  total: total,
-                ),
+                    color: AppColors.positive,
+                    label: 'Positive',
+                    count: counts['positive']!,
+                    total: total),
                 const SizedBox(height: 5),
                 _LegendRow(
-                  color: Colors.amber.shade400,
-                  label: 'Neutral',
-                  count: counts['neutral']!,
-                  total: total,
-                ),
+                    color: AppColors.neutral,
+                    label: 'Neutral',
+                    count: counts['neutral']!,
+                    total: total),
                 const SizedBox(height: 5),
                 _LegendRow(
-                  color: Colors.red.shade400,
-                  label: 'Negative',
-                  count: counts['negative']!,
-                  total: total,
-                ),
+                    color: AppColors.negative,
+                    label: 'Negative',
+                    count: counts['negative']!,
+                    total: total),
               ],
             ),
           ),
-          // Avg confidence stat
+          const SizedBox(width: 16),
+          // Avg confidence badge
           Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                width: 72,
-                height: 72,
+                width: 68,
+                height: 68,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: dominantColor.withValues(alpha: 0.08),
+                  color: dominantColor.withValues(alpha: 0.12),
                   border: Border.all(
-                      color: dominantColor.withValues(alpha: 0.3), width: 2),
+                      color: dominantColor.withValues(alpha: 0.35), width: 2),
                 ),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -182,15 +165,15 @@ class SentimentChart extends StatelessWidget {
                     Text(
                       '$avgConfidence%',
                       style: TextStyle(
-                        fontSize: 18,
+                        fontSize: 16,
                         fontWeight: FontWeight.bold,
                         color: dominantColor,
                       ),
                     ),
                     Text(
                       'avg conf.',
-                      style:
-                          TextStyle(fontSize: 9, color: Colors.grey[500]),
+                      style: const TextStyle(
+                          fontSize: 8, color: AppColors.textSecondary),
                     ),
                   ],
                 ),
@@ -199,7 +182,7 @@ class SentimentChart extends StatelessWidget {
               Text(
                 'Mostly ${dominant[0].toUpperCase()}${dominant.substring(1)}',
                 style: TextStyle(
-                  fontSize: 11,
+                  fontSize: 10,
                   color: dominantColor,
                   fontWeight: FontWeight.w600,
                 ),
@@ -214,11 +197,11 @@ class SentimentChart extends StatelessWidget {
   Color _colorFor(String label) {
     switch (label) {
       case 'positive':
-        return Colors.green.shade500;
+        return AppColors.positive;
       case 'negative':
-        return Colors.red.shade500;
+        return AppColors.negative;
       default:
-        return Colors.amber.shade600;
+        return AppColors.neutral;
     }
   }
 }
@@ -244,40 +227,36 @@ class _LegendRow extends StatelessWidget {
     return Row(
       children: [
         Container(
-          width: 10,
-          height: 10,
+          width: 8,
+          height: 8,
           decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(2),
-          ),
+              color: color, borderRadius: BorderRadius.circular(2)),
         ),
         const SizedBox(width: 6),
         SizedBox(
-          width: 60,
-          child: Text(label, style: const TextStyle(fontSize: 12)),
+          width: 54,
+          child: Text(label,
+              style: const TextStyle(
+                  fontSize: 11, color: AppColors.textSecondary)),
         ),
-        // Mini bar
         Expanded(
           child: ClipRRect(
             borderRadius: BorderRadius.circular(4),
             child: LinearProgressIndicator(
               value: barFraction.toDouble(),
-              backgroundColor: Colors.grey.shade200,
+              backgroundColor: Colors.white.withValues(alpha: 0.08),
               color: color,
-              minHeight: 6,
+              minHeight: 5,
             ),
           ),
         ),
         const SizedBox(width: 8),
         SizedBox(
-          width: 52,
+          width: 48,
           child: Text(
             '$count ($pct%)',
             style: TextStyle(
-              color: color,
-              fontWeight: FontWeight.w600,
-              fontSize: 11,
-            ),
+                color: color, fontWeight: FontWeight.w600, fontSize: 10),
             textAlign: TextAlign.right,
           ),
         ),

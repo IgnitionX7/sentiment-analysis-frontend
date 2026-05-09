@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/article_result.dart';
+import '../theme.dart';
 
 class ArticleCard extends StatelessWidget {
   final ArticleResult article;
@@ -10,22 +11,22 @@ class ArticleCard extends StatelessWidget {
   Color get _sentimentColor {
     switch (article.sentimentLabel) {
       case 'positive':
-        return Colors.green;
+        return AppColors.positive;
       case 'negative':
-        return Colors.red;
+        return AppColors.negative;
       default:
-        return Colors.amber;
+        return AppColors.neutral;
     }
   }
 
   IconData get _sentimentIcon {
     switch (article.sentimentLabel) {
       case 'positive':
-        return Icons.sentiment_satisfied_alt;
+        return Icons.sentiment_satisfied_alt_rounded;
       case 'negative':
-        return Icons.sentiment_dissatisfied;
+        return Icons.sentiment_dissatisfied_rounded;
       default:
-        return Icons.sentiment_neutral;
+        return Icons.sentiment_neutral_rounded;
     }
   }
 
@@ -37,10 +38,15 @@ class ArticleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 6),
+      decoration: BoxDecoration(
+        color: AppColors.cardBg,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.cardBorder),
+      ),
       child: InkWell(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         onTap: () async {
           final uri = Uri.tryParse(article.url);
           if (uri != null && await canLaunchUrl(uri)) {
@@ -52,95 +58,114 @@ class ArticleCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Title row + optional sentiment chip
+              // Title + sentiment chip
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
                     child: Text(
                       article.title,
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                      style: const TextStyle(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                        height: 1.4,
+                      ),
                     ),
                   ),
                   if (article.isAnalyzed) ...[
                     const SizedBox(width: 12),
-                    Chip(
-                      avatar: Icon(_sentimentIcon,
-                          size: 18, color: _sentimentColor),
-                      label: Text(
-                        '${article.sentimentLabel} ${(article.sentimentScore! * 100).toStringAsFixed(0)}%',
-                        style: TextStyle(
-                          color: _sentimentColor,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 12,
-                        ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: _sentimentColor.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                            color: _sentimentColor.withValues(alpha: 0.4)),
                       ),
-                      backgroundColor:
-                          _sentimentColor.withValues(alpha: 0.1),
-                      side: BorderSide(
-                          color: _sentimentColor.withValues(alpha: 0.3)),
-                      padding: EdgeInsets.zero,
-                      visualDensity: VisualDensity.compact,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(_sentimentIcon,
+                              size: 14, color: _sentimentColor),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${article.sentimentLabel} ${(article.sentimentScore! * 100).toStringAsFixed(0)}%',
+                            style: TextStyle(
+                              color: _sentimentColor,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 10),
               // Source + date
               Row(
                 children: [
-                  const Icon(Icons.source_outlined,
-                      size: 14, color: Colors.grey),
+                  Icon(Icons.person_outline_rounded,
+                      size: 13, color: AppColors.textMuted),
                   const SizedBox(width: 4),
                   Text(
                     article.source.isNotEmpty ? article.source : 'Unknown',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.grey[600],
-                          fontWeight: FontWeight.w500,
-                        ),
+                    style: const TextStyle(
+                      color: AppColors.textMuted,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                   if (_formattedDate.isNotEmpty) ...[
                     const SizedBox(width: 8),
-                    Text('•',
+                    Text('·',
                         style: TextStyle(
-                            color: Colors.grey[400], fontSize: 12)),
+                            color: AppColors.textMuted.withValues(alpha: 0.5),
+                            fontSize: 12)),
                     const SizedBox(width: 8),
-                    const Icon(Icons.calendar_today_outlined,
-                        size: 12, color: Colors.grey),
+                    Icon(Icons.calendar_today_outlined,
+                        size: 12, color: AppColors.textMuted),
                     const SizedBox(width: 4),
                     Text(
                       _formattedDate,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Colors.grey[600],
-                          ),
+                      style: const TextStyle(
+                          color: AppColors.textMuted, fontSize: 12),
                     ),
                   ],
                 ],
               ),
               // Description
               if (article.description.isNotEmpty) ...[
-                const SizedBox(height: 8),
+                const SizedBox(height: 10),
                 Text(
                   article.description,
-                  maxLines: 3,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodyMedium,
+                  style: const TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 13,
+                    height: 1.4,
+                  ),
                 ),
               ],
-              // Unanalyzed hint
+              // Tap hint (pre-analysis)
               if (!article.isAnalyzed) ...[
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    Icon(Icons.open_in_new,
-                        size: 13, color: Colors.grey[400]),
+                    Icon(Icons.open_in_new_rounded,
+                        size: 12,
+                        color: AppColors.textMuted.withValues(alpha: 0.6)),
                     const SizedBox(width: 4),
                     Text(
-                      'Tap to open article',
+                      'Tap to open',
                       style: TextStyle(
-                          color: Colors.grey[400], fontSize: 11),
+                        color: AppColors.textMuted.withValues(alpha: 0.6),
+                        fontSize: 11,
+                      ),
                     ),
                   ],
                 ),
