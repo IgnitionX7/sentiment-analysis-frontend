@@ -5,15 +5,16 @@ import '../models/article_result.dart';
 class ApiService {
   static const String baseUrl = 'http://localhost:5000';
 
-  /// Fetches articles from NewsAPI without running sentiment analysis.
+  /// Fetches articles/posts without running sentiment analysis.
   static Future<List<ArticleResult>> fetchArticles(
     String query, {
     int pageSize = 10,
+    String source = 'bluesky',
   }) async {
     final response = await http.post(
       Uri.parse('$baseUrl/fetch'),
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'query': query, 'page_size': pageSize}),
+      body: jsonEncode({'query': query, 'page_size': pageSize, 'source': source}),
     );
 
     final data = jsonDecode(response.body) as Map<String, dynamic>;

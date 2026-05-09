@@ -42,6 +42,8 @@ class _HomePageState extends State<HomePage> {
   String? _analyzeError;
   bool _hasFetched = false;
   String _lastQuery = '';
+  String _source = 'bluesky';
+  String _lastSource = 'bluesky';
 
   Future<void> _fetchNews() async {
     final query = _controller.text.trim();
@@ -56,10 +58,11 @@ class _HomePageState extends State<HomePage> {
     });
 
     try {
-      final articles = await ApiService.fetchArticles(query);
+      final articles = await ApiService.fetchArticles(query, source: _source);
       setState(() {
         _articles = articles;
         _lastQuery = query;
+        _lastSource = _source;
         _hasFetched = true;
       });
     } catch (e) {
@@ -119,41 +122,67 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildSearchBar() {
+    final isBluesky = _source == 'bluesky';
     return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Row(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      child: Column(
         children: [
-          Expanded(
-            child: TextField(
-              controller: _controller,
-              decoration: InputDecoration(
-                hintText: 'Search news by keyword...',
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 14,
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _controller,
+                  decoration: InputDecoration(
+                    hintText: isBluesky
+                        ? 'Search Bluesky posts...'
+                        : 'Search news by keyword...',
+                    prefixIcon: const Icon(Icons.search),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
+                  ),
+                  onSubmitted: (_) => _fetchNews(),
+                  textInputAction: TextInputAction.search,
                 ),
               ),
-              onSubmitted: (_) => _fetchNews(),
-              textInputAction: TextInputAction.search,
-            ),
+              const SizedBox(width: 12),
+              SizedBox(
+                height: 48,
+                child: ElevatedButton.icon(
+                  onPressed: (_fetching || _analyzing) ? null : _fetchNews,
+                  icon: Icon(isBluesky ? Icons.cloud : Icons.newspaper),
+                  label: Text(isBluesky ? 'Fetch Posts' : 'Fetch News'),
+                  style: ElevatedButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 12),
-          SizedBox(
-            height: 48,
-            child: ElevatedButton.icon(
-              onPressed: (_fetching || _analyzing) ? null : _fetchNews,
-              icon: const Icon(Icons.newspaper),
-              label: const Text('Fetch News'),
-              style: ElevatedButton.styleFrom(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+          const SizedBox(height: 10),
+          SegmentedButton<String>(
+            segments: const [
+              ButtonSegment(
+                value: 'bluesky',
+                label: Text('Bluesky'),
+                icon: Icon(Icons.cloud),
               ),
-            ),
+              ButtonSegment(
+                value: 'newsapi',
+                label: Text('News'),
+                icon: Icon(Icons.newspaper),
+              ),
+            ],
+            selected: {_source},
+            onSelectionChanged: (_fetching || _analyzing)
+                ? null
+                : (selection) => setState(() => _source = selection.first),
           ),
         ],
       ),
@@ -263,7 +292,7 @@ class _HomePageState extends State<HomePage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '${_articles.length} articles for "$_lastQuery"',
+                  '${_articles.length} ${_lastSource == 'bluesky' ? 'posts' : 'articles'} for "$_lastQuery"',
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
