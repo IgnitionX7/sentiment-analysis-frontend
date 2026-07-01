@@ -6,8 +6,9 @@ import '../services/post_service.dart';
 
 class CommentTile extends StatelessWidget {
   final Comment comment;
+  final Future<void> Function()? onDelete;
 
-  const CommentTile({super.key, required this.comment});
+  const CommentTile({super.key, required this.comment, this.onDelete});
 
   @override
   Widget build(BuildContext context) {
@@ -39,6 +40,13 @@ class CommentTile extends StatelessWidget {
                       style: const TextStyle(
                           color: AppColors.textMuted, fontSize: 10),
                     ),
+                    const Spacer(),
+                    if (onDelete != null)
+                      GestureDetector(
+                        onTap: onDelete,
+                        child: const Icon(Icons.delete_outline_rounded,
+                            size: 14, color: AppColors.negative),
+                      ),
                   ],
                 ),
                 const SizedBox(height: 3),

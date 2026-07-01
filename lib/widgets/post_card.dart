@@ -5,8 +5,14 @@ import '../models/post.dart';
 class PostCard extends StatelessWidget {
   final Post post;
   final VoidCallback onTap;
+  final Future<void> Function()? onDelete;
 
-  const PostCard({super.key, required this.post, required this.onTap});
+  const PostCard({
+    super.key,
+    required this.post,
+    required this.onTap,
+    this.onDelete,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -54,6 +60,21 @@ class PostCard extends StatelessWidget {
                     ),
                   ),
                   _SourceBadge(source: post.source),
+                  if (onDelete != null) ...[
+                    const SizedBox(width: 6),
+                    GestureDetector(
+                      onTap: onDelete,
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: AppColors.negative.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(Icons.delete_outline_rounded,
+                            color: AppColors.negative, size: 16),
+                      ),
+                    ),
+                  ],
                 ],
               ),
               const SizedBox(height: 12),

@@ -42,4 +42,22 @@ class PostService {
     });
     await batch.commit();
   }
+
+  static Future<void> deletePost(String postId) async {
+    await _db.collection('posts').doc(postId).delete();
+  }
+
+  static Future<void> deleteComment(
+      String postId, String commentId) async {
+    final batch = _db.batch();
+    batch.delete(_db
+        .collection('posts')
+        .doc(postId)
+        .collection('comments')
+        .doc(commentId));
+    batch.update(_db.collection('posts').doc(postId), {
+      'commentCount': FieldValue.increment(-1),
+    });
+    await batch.commit();
+  }
 }

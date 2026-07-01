@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../theme.dart';
 import '../services/auth_service.dart';
+import '../services/user_service.dart';
 import 'home_screen.dart';
 import 'news_screen.dart';
 import 'social_screen.dart';
 import 'community_screen.dart';
 import 'profile_screen.dart';
 import 'guest_screen.dart';
+import 'admin_screen.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
@@ -99,6 +101,23 @@ class _AppSidebar extends StatelessWidget {
             label: 'Profile',
             active: selectedIndex == 4,
             onTap: () => onNavigate(4),
+          ),
+          StreamBuilder<String?>(
+            stream: UserService.watchCurrentUserRole(),
+            builder: (context, snapshot) {
+              if (snapshot.data != 'admin') return const SizedBox.shrink();
+              return _NavItem(
+                icon: Icons.admin_panel_settings_rounded,
+                label: 'Admin',
+                active: false,
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                        builder: (_) => const AdminScreen()),
+                  );
+                },
+              );
+            },
           ),
           const Spacer(),
           Divider(
