@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../theme.dart';
+import '../services/auth_service.dart';
 import 'home_screen.dart';
 import 'news_screen.dart';
 import 'social_screen.dart';
-import 'history_screen.dart';
+import 'community_screen.dart';
 import 'profile_screen.dart';
 import 'guest_screen.dart';
 
@@ -31,9 +33,7 @@ class _MainShellState extends State<MainShell> {
               selectedIndex: _index,
               onNavigate: _navigateTo,
             ),
-            // Vertical divider
             Container(width: 1, color: AppColors.cardBorder),
-            // Content
             Expanded(
               child: IndexedStack(
                 index: _index,
@@ -41,7 +41,7 @@ class _MainShellState extends State<MainShell> {
                   HomeScreen(onNavigate: _navigateTo),
                   NewsScreen(onNavigate: _navigateTo),
                   SocialScreen(onNavigate: _navigateTo),
-                  const HistoryScreen(),
+                  const CommunityScreen(),
                   const ProfileScreen(),
                 ],
               ),
@@ -64,7 +64,6 @@ class _AppSidebar extends StatelessWidget {
     required this.onNavigate,
   });
 
-  // Treat indices 0, 1, 2 (Home + analysis screens) as "Home" active
   bool get _homeActive => selectedIndex <= 2;
 
   @override
@@ -90,8 +89,8 @@ class _AppSidebar extends StatelessWidget {
             onTap: () => onNavigate(0),
           ),
           _NavItem(
-            icon: Icons.history_rounded,
-            label: 'History',
+            icon: Icons.people_rounded,
+            label: 'Community',
             active: selectedIndex == 3,
             onTap: () => onNavigate(3),
           ),
@@ -100,22 +99,6 @@ class _AppSidebar extends StatelessWidget {
             label: 'Profile',
             active: selectedIndex == 4,
             onTap: () => onNavigate(4),
-          ),
-          _NavItem(
-            icon: Icons.settings_rounded,
-            label: 'Settings',
-            active: false,
-            onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text('Settings coming soon!'),
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                  backgroundColor: AppColors.accent,
-                ),
-              );
-            },
           ),
           const Spacer(),
           Divider(
@@ -130,9 +113,13 @@ class _AppSidebar extends StatelessWidget {
             active: false,
             isLogout: true,
             onTap: () {
-              Navigator.of(context).pushReplacement(
-                MaterialPageRoute(builder: (_) => const GuestScreen()),
-              );
+              AuthService.signOut().then((_) {
+                if (context.mounted) {
+                  Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(builder: (_) => const GuestScreen()),
+                  );
+                }
+              });
             },
           ),
           const SizedBox(height: 24),
@@ -144,44 +131,61 @@ class _AppSidebar extends StatelessWidget {
   Widget _buildUserInfo() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: kAccentGradient,
-            ),
-            child: const Icon(Icons.person_rounded,
-                color: Colors.white, size: 24),
-          ),
-          const SizedBox(width: 10),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Guest User',
-                  style: TextStyle(
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
+      child: StreamBuilder<User?>(
+        stream: FirebaseAuth.instance.authStateChanges(),
+        builder: (context, snapshot) {
+          final user = snapshot.data;
+          final name = user?.displayName ?? 'Guest User';
+          final email = user?.email ?? 'guest@sentilyze.app';
+          final photoUrl = user?.photoURL;
+
+          return Row(
+            children: [
+              if (photoUrl != null)
+                CircleAvatar(
+                  radius: 22,
+                  backgroundImage: NetworkImage(photoUrl),
+                )
+              else
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: kAccentGradient,
                   ),
+                  child: const Icon(Icons.person_rounded,
+                      color: Colors.white, size: 24),
                 ),
-                SizedBox(height: 2),
-                Text(
-                  'guest@sentilyze.app',
-                  style: TextStyle(
-                    color: AppColors.textMuted,
-                    fontSize: 11,
-                  ),
-                  overflow: TextOverflow.ellipsis,
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      name,
+                      style: const TextStyle(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      email,
+                      style: const TextStyle(
+                        color: AppColors.textMuted,
+                        fontSize: 11,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
-        ],
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -216,16 +220,14 @@ class _NavItem extends StatelessWidget {
       onTap: onTap,
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-        padding:
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
         decoration: BoxDecoration(
           color: active
               ? AppColors.accent.withValues(alpha: 0.18)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
           border: active
-              ? Border.all(
-                  color: AppColors.accent.withValues(alpha: 0.3))
+              ? Border.all(color: AppColors.accent.withValues(alpha: 0.3))
               : null,
         ),
         child: Row(
@@ -236,8 +238,7 @@ class _NavItem extends StatelessWidget {
               label,
               style: TextStyle(
                 color: color,
-                fontWeight:
-                    active ? FontWeight.w600 : FontWeight.normal,
+                fontWeight: active ? FontWeight.w600 : FontWeight.normal,
                 fontSize: 14,
               ),
             ),

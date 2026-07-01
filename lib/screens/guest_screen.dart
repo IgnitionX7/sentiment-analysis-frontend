@@ -1,9 +1,59 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../theme.dart';
+import '../services/auth_service.dart';
 import 'main_shell.dart';
 
-class GuestScreen extends StatelessWidget {
+class GuestScreen extends StatefulWidget {
   const GuestScreen({super.key});
+
+  @override
+  State<GuestScreen> createState() => _GuestScreenState();
+}
+
+class _GuestScreenState extends State<GuestScreen> {
+  bool _signingIn = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // If already signed in, go straight to the app
+    if (FirebaseAuth.instance.currentUser != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const MainShell()),
+          );
+        }
+      });
+    }
+  }
+
+  Future<void> _signInWithGoogle() async {
+    setState(() => _signingIn = true);
+    try {
+      await AuthService.signInWithGoogle();
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const MainShell()),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Sign in failed: ${e.toString()}'),
+            backgroundColor: AppColors.negative,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _signingIn = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -15,7 +65,8 @@ class GuestScreen extends StatelessWidget {
             padding: const EdgeInsets.all(24),
             child: Container(
               width: 360,
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(28),
@@ -45,7 +96,7 @@ class GuestScreen extends StatelessWidget {
                         ),
                       ],
                     ),
-                    child: const Icon(Icons.person_rounded,
+                    child: const Icon(Icons.insights_rounded,
                         color: Colors.white, size: 36),
                   ),
                   const SizedBox(height: 24),
@@ -55,7 +106,7 @@ class GuestScreen extends StatelessWidget {
                     shaderCallback: (bounds) =>
                         kGuestGradient.createShader(bounds),
                     child: const Text(
-                      'Continue as\nGuest',
+                      'Welcome to\nSentilyze',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 28,
@@ -67,7 +118,7 @@ class GuestScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    'Explore Sentilyze without creating an account',
+                    'Sign in to share analyses and join the community',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 14,
@@ -77,7 +128,80 @@ class GuestScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 32),
 
-                  // Continue as Guest button
+                  // Google Sign-In button
+                  SizedBox(
+                    width: double.infinity,
+                    child: _signingIn
+                        ? const Center(
+                            child: CircularProgressIndicator(
+                                color: AppColors.guestStart))
+                        : OutlinedButton(
+                            onPressed: _signInWithGoogle,
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.grey.shade700,
+                              side: BorderSide(color: Colors.grey.shade300),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12)),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 20, vertical: 14),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Container(
+                                  width: 22,
+                                  height: 22,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                        color: Colors.grey.shade200),
+                                    color: Colors.white,
+                                  ),
+                                  child: const Center(
+                                    child: Text(
+                                      'G',
+                                      style: TextStyle(
+                                        color: Color(0xFF4285F4),
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Text(
+                                  'Sign in with Google',
+                                  style: TextStyle(
+                                    color: Colors.grey.shade700,
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 15,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Divider
+                  Row(
+                    children: [
+                      Expanded(child: Divider(color: Colors.grey.shade200)),
+                      Padding(
+                        padding:
+                            const EdgeInsets.symmetric(horizontal: 12),
+                        child: Text(
+                          'or',
+                          style: TextStyle(
+                              color: Colors.grey.shade400, fontSize: 13),
+                        ),
+                      ),
+                      Expanded(child: Divider(color: Colors.grey.shade200)),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Continue as Guest
                   SizedBox(
                     width: double.infinity,
                     child: AppGradientButton(
@@ -92,83 +216,11 @@ class GuestScreen extends StatelessWidget {
                       },
                     ),
                   ),
-                  const SizedBox(height: 24),
-
-                  // Divider
-                  Row(
-                    children: [
-                      Expanded(child: Divider(color: Colors.grey.shade200)),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        child: Text(
-                          'or',
-                          style: TextStyle(
-                              color: Colors.grey.shade400, fontSize: 13),
-                        ),
-                      ),
-                      Expanded(child: Divider(color: Colors.grey.shade200)),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Sign In / Sign Up (coming soon)
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () => _showComingSoon(context),
-                          style: OutlinedButton.styleFrom(
-                            side: BorderSide(color: Colors.grey.shade300),
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12)),
-                            padding:
-                                const EdgeInsets.symmetric(vertical: 12),
-                          ),
-                          child: Text(
-                            'Sign In',
-                            style: TextStyle(
-                                color: Colors.grey.shade700,
-                                fontWeight: FontWeight.w500),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () => _showComingSoon(context),
-                          style: OutlinedButton.styleFrom(
-                            side: BorderSide(color: Colors.grey.shade300),
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12)),
-                            padding:
-                                const EdgeInsets.symmetric(vertical: 12),
-                          ),
-                          child: Text(
-                            'Sign Up',
-                            style: TextStyle(
-                                color: Colors.grey.shade700,
-                                fontWeight: FontWeight.w500),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
                 ],
               ),
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  void _showComingSoon(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Account features coming soon!'),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        backgroundColor: AppColors.accent,
       ),
     );
   }

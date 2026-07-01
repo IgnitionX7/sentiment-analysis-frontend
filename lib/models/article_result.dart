@@ -54,4 +54,29 @@ class ArticleResult {
         'url': url,
         'published_at': publishedAt,
       };
+
+  /// Serialize including sentiment for Firestore storage.
+  Map<String, dynamic> toFullJson() => {
+        'title': title,
+        'description': description,
+        'source': source,
+        'url': url,
+        'published_at': publishedAt,
+        if (sentimentLabel != null) 'sentiment_label': sentimentLabel,
+        if (sentimentScore != null) 'sentiment_score': sentimentScore,
+      };
+
+  factory ArticleResult.fromFullJson(Map<String, dynamic> json) {
+    return ArticleResult(
+      title: json['title'] ?? '',
+      description: json['description'] ?? '',
+      source: json['source'] ?? '',
+      url: json['url'] ?? '',
+      publishedAt: json['published_at'] ?? '',
+      sentimentLabel: json['sentiment_label'],
+      sentimentScore: json['sentiment_score'] != null
+          ? (json['sentiment_score'] as num).toDouble()
+          : null,
+    );
+  }
 }

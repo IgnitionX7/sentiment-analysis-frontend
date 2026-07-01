@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../theme.dart';
 import '../models/article_result.dart';
+import '../models/post.dart';
 import '../services/api_service.dart';
+import '../services/post_service.dart';
 import '../widgets/article_card.dart';
 import '../widgets/sentiment_chart.dart';
 
@@ -298,9 +301,100 @@ class _NewsScreenState extends State<NewsScreen> {
               onTap: _analyzing ? null : _analyzeSentiment,
               verticalPadding: 9,
               horizontalPadding: 16,
+            )
+          else if (FirebaseAuth.instance.currentUser != null)
+            AppGradientButton(
+              label: 'Share as Post',
+              icon: Icons.share_rounded,
+              onTap: () => _shareAsPost(context),
+              verticalPadding: 9,
+              horizontalPadding: 16,
             ),
         ],
       ),
     );
+  }
+
+  Future<void> _shareAsPost(BuildContext context) async {
+    final user = FirebaseAuth.instance.currentUser!;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1E0D40),
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Share Analysis',
+            style: TextStyle(color: AppColors.textPrimary)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Post your "$_lastQuery" analysis to the community?',
+              style:
+                  const TextStyle(color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '${_articles.length} articles · NewsAPI',
+              style: const TextStyle(
+                  color: AppColors.textMuted, fontSize: 13),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel',
+                style: TextStyle(color: AppColors.textSecondary)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Post',
+                style: TextStyle(color: AppColors.accent)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !context.mounted) return;
+
+    try {
+      final post = Post(
+        id: '',
+        userId: user.uid,
+        userName: user.displayName ?? 'User',
+        userPhotoUrl: user.photoURL,
+        query: _lastQuery,
+        source: 'newsapi',
+        createdAt: DateTime.now(),
+        articles: _articles,
+        sentimentCounts: Post.computeCounts(_articles),
+      );
+      await PostService.createPost(post);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Posted to Community!'),
+            backgroundColor: AppColors.positive,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to post: $e'),
+            backgroundColor: AppColors.negative,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      }
+    }
   }
 }
